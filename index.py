@@ -19,7 +19,7 @@ from spotify import (
 
 app = Flask(__name__)
 # YENİ: Flask session'ları için secret key. Güvenli bir yerden alınmalı.
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "your_default_secret_key_please_change_this") # Ortam değişkeninden veya varsayılan
+app.secret_key = os.getenv("FLASK_SECRET_KEY") # Ortam değişkeninden veya varsayılan
 
 
 @app.route("/")
