@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Now Playing on Spotify{% endblock %}
+
+{% block body %}
+<style>
+    .lyrics-text {
+        font-size: 1.5em; /* Örnek: Yazı tipi boyutunu biraz büyüt */
+        line-height: 1.6; /* Satır yüksekliğini artır */
+        color: #212529; /* Koyu gri renk (Bootstrap varsayılan metin rengi) */
+        /* Diğer stil tanımlamaları (font-weight, font-family vb.) buraya eklenebilir */
+        /* Örneğin: */
+        /* font-family: 'Georgia', serif; */
+        /* text-align: left; */
+    }
+    .chatgpt-response-container {
+        font-size: 1.5em; /* Örnek: Yazı tipi boyutunu biraz büyüt */
+        background-color: #ffffff; /* Beyaz arka plan */
+        border: 1px solid #dee2e6; /* Hafif bir sınır */
+        border-radius: .25rem; /* Köşeleri yuvarla */
+        padding: 15px;
+        max-height: 1500px; /* Maksimum yükseklik, gerekirse kaydırma çubuğu çıkar */
+        overflow-y: auto; /* Dikey kaydırma çubuğu */
+        white-space: pre-wrap; /* ChatGPT yanıtındaki formatı koru */
+    }
+</style>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h2>Now Playing on Spotify</h2>
+        </div>
+    </div>
+    <hr>
+    <div class="row mt-4">
+        <div class="col-md-5"> <!-- Sol Sütun: Şarkı Bilgileri ve Sözleri -->
+            <h4>Şarkı Bilgileri</h4>
+
+            {% if track %}
+                <div class="card mb-3">
+                    {% if track.image_url %}
+                        <img src="{{ track.image_url }}" class="card-img-top" alt="{{ track.album }} cover" style="max-width: 300px; margin: auto; padding-top: 20px;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h4 class="card-title">{{ track.name }}</h4>
+                        <h5 class="card-subtitle mb-2 text-muted">By: {{ track.artist }}</h5>
+                        <p class="card-text">Album: {{ track.album }}</p>
+                        <p class="card-text">
+                            Status: 
+                            {% if track.is_playing %}
+                                <span class="badge bg-success">Playing</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Paused / Stopped</span>
+                            {% endif %}
+                        </p>
+                        {% if track.progress_ms is not none and track.duration_ms %}
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: {{ (track.progress_ms / track.duration_ms) * 100 }}%;" 
+                                     aria-valuenow="{{ track.progress_ms }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="{{ track.duration_ms }}">
+                                     {{ (track.progress_ms // 1000) | int }}s / {{ (track.duration_ms // 1000) | int }}s
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h4>Lyrics</h4>
+                    <div class="lyrics-container p-3 border rounded bg-light">
+                        {% if track.lyrics %}
+                            <p class="lyrics-text" style="white-space: pre-wrap;">{{ track.lyrics }}</p>
+                        {% else %}
+                            <p>Lyrics not available for this track yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elif message %}
+                <div class="alert alert-info" role="alert">
+                    {{ message }}
+                </div>
+                {% if not token_available %}
+                    <p>It seems you are not logged in or your session has expired.</p>
+                    <a href="{{ url_for('login_spotify') }}" class="btn btn-primary">Login with Spotify</a>
+                {% endif %}
+            {% else %}
+                 <div class="alert alert-warning" role="alert">
+                    Could not retrieve currently playing song information. Please try logging in again.
+                </div>
+                <a href="{{ url_for('login_spotify') }}" class="btn btn-primary">Login with Spotify</a>
+            {% endif %}
+        </div> <!-- Sol sütun (col-md-7) kapanışı -->
+        <div class="col-md-7"> <!-- Sağ Sütun: ChatGPT Yorumu -->
+            <h4>ChatGPT Yorumu</h4>
+            <div class="chatgpt-response-container">
+                {% if track and track.chatgpt_commentary %}
+                    <p>{{ track.chatgpt_commentary }}</p>
+                {% elif track %}
+                    <p>Şarkı sözleri için henüz bir yorum oluşturulmadı veya alınamadı.</p>
+                {% else %}
+                    <p>Yorumlamak için çalınan bir şarkı bulunamadı.</p>
+                {% endif %}
+            </div>
+        </div> <!-- Sağ sütun (col-md-5) kapanışı -->
+    </div> <!-- row mt-4 kapanışı -->
+    <div class="mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Home</a>
+        {% if token_available or session.get("spotify_token_info") %}
+        <a href="{{ url_for('login_spotify') }}" class="btn btn-info">Refresh/Re-login Spotify</a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+
+{{ super() }} {# base.html'deki javascript blokunu dahil eder #}
+{% if error %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const lyricsElement = document.querySelector('.lyrics-text');
+        const chatgptResponseContainer = document.querySelector('.chatgpt-response-container');
+        
+        if (lyricsElement && chatgptResponseContainer) {
+            const lyrics = lyricsElement.textContent.trim();
+            if (lyrics && lyrics !== "Şarkı sözleri bulunamadı veya alınamadı.") {
+                // Şarkı adı ve sanatçıyı al
+                const trackName = "{{ track.name|escapejs }}";
+                const artistName = "{{ track.artist|escapejs }}";
+                
+                // Yükleniyor mesajı göster
+                chatgptResponseContainer.innerHTML = "<p>Şarkı sözleri analiz ediliyor, lütfen bekleyin...</p>";
+                
+                // Sunucuya istek gönder
+                fetch('/analyze-lyrics', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lyrics: lyrics,
+                        track_name: trackName,
+                        artist_name: artistName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.analysis) {
+                        chatgptResponseContainer.innerHTML = `<p>${data.analysis}</p>`;
+                    } else {
+                        chatgptResponseContainer.innerHTML = `<p>Analiz sırasında bir hata oluştu: ${data.error || 'Bilinmeyen hata'}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    chatgptResponseContainer.innerHTML = '<p>Analiz isteği gönderilirken bir hata oluştu.</p>';
+                });
+            }
+        }
+    });
+    </script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="searchbar px-3 d-flex flex-column align-items-center">
+    <div class="row">
+        <div class="text-center">
+            <img src="https://static.vecteezy.com/system/resources/previews/015/239/704/non_2x/names-of-girls-english-helium-balloon-shiny-celebration-sticker-3d-inflated-lyric-free-png.png"
+                class="img-fluid syrics">
+            <div class="form-floating">
+                <form action="spotify" method="post">
+                    <input type="text" class="form-control input-sm mb-3" id="floatingInput" name="url"
+                        placeholder="Enter a Spotify link" required>
+                    <button type="submit" value="submit" class="btn btn-success btn-lg">Search</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if now_playing_available %}
+<div class="row mt-4 mb-3">
+    <div class="text-center">
+        <p class="h5">Or, find out what's currently playing on your Spotify:</p>
+        <a href="{{ url_for('now_playing') }}" class="btn btn-info btn-lg mt-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-spotify me-2" viewBox="0 0 16 16" style="vertical-align: -0.2em;">
+                <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.669 11.538a.498.498 0 0 1-.686.165c-1.879-1.147-4.243-1.407-7.028-.77a.499.499 0 0 1-.222-.973c3.048-.696 5.662-.397 7.77.892a.5.5 0 0 1 .138.788zm.979-2.178a.624.624 0 0 1-.858.205c-2.15-1.321-5.428-1.704-7.972-.932a.625.625 0 0 1-.362-1.194c2.905-.881 6.517-.454 8.986 1.063a.624.624 0 0 1 .206.961zm.925-2.267C11.869 5.632 7.092 5.12 4.126 6.173a.75.75 0 1 1-.43-1.437c3.436-1.198 8.787-.612 11.528 1.39a.75.75 0 1 1-.728 1.212z"/>
+            </svg>
+            See Now Playing
+        </a>
+    </div>
+</div>
+{% endif %}
+<footer class="fixed-bottom text-center text-white">
+    Test
+</footer>
+{% endblock %}
+
+{% block javascript %}
+{% if error %}
+<script>
+    showToast("{{ error }}", "error");
+</script>
+{% endif %}
+{% endblock %}
