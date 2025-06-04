@@ -8,10 +8,11 @@ from openai import OpenAI # Added for ChatGPT integration
 from dotenv import load_dotenv
 load_dotenv()
 
+
 cid = os.getenv("SPOTIFY_CLIENT_ID")
 secret = os.getenv("SPOTIFY_CLIENT_SECRET")
 # Yeni: Redirect URI'yi ortam değişkeninden al
-SPOTIPY_REDIRECT_URI = os.getenv("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:5000/callback") # Varsayılan eklendi
+SPOTIPY_REDIRECT_URI = os.getenv("SPOTIPY_REDIRECT_URI", "https://flask-cyan.vercel.app/callback") # Varsayılan eklendi
 
 # Bu sp nesnesi genel API çağrıları için kalabilir (Client Credentials Flow)
 client_credentials_manager = SpotifyClientCredentials(
